@@ -9,8 +9,8 @@ android {
 
     defaultConfig {
         applicationId = "org.justme.trackerapp"
-        minSdk = 24
-        targetSdk = 34
+        minSdk = 26
+        targetSdk = 35
         versionCode = 1
         versionName = "1.0"
 
@@ -67,6 +67,7 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+    implementation(libs.kotlinx.collections.immutable)
 
     //Graphics dependencies
     val composeBom = platform("androidx.compose:compose-bom:2024.06.00")

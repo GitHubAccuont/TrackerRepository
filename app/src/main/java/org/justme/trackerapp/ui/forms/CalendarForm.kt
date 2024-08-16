@@ -2,45 +2,56 @@ package org.justme.trackerapp.ui.forms
 
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CutCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import org.justme.trackerapp.ui.theme.TrackerAppTheme
 import java.time.DayOfWeek
 import java.time.LocalDate
-import java.time.Month
-import java.time.Year
 
 class CalendarForm {
 
-    private val daysOfWeekFull =
-        listOf("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
+    private var selectedDate: LocalDate = LocalDate.now()
+    private val daysOfWeekFull = DayOfWeek.entries.toTypedArray()
 
-    @Preview
+
     @Composable
-    private fun DayOfWeekGrid() {
-        Column {
+    fun DisplayMonth() {
+        Column(modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.Center) {
+            MonthAndYearDisplay()
             Row(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(8.dp),
-                horizontalArrangement = Arrangement.SpaceEvenly
+                    .fillMaxWidth(),
             ) {
                 daysOfWeekFull.forEach { day ->
                     Box(
@@ -54,7 +65,7 @@ class CalendarForm {
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = day.take(3),
+                            text = day.toString(),
                             modifier = Modifier.padding(8.dp),
                             textAlign = TextAlign.Center,
                             fontSize = 16.sp,
@@ -65,43 +76,112 @@ class CalendarForm {
                     }
                 }
             }
-            MonthAndDaysBox(Month.JULY, Year.of(2024))
+            DayForMonthDisplay(getMonthData())
         }
     }
 
     @Composable
-    private fun MonthNameDisplay(month: Month) {
-        Box(
-            Modifier
-                .padding(4.dp)
+    fun MonthAndYearDisplay() {
+        Row(
+            modifier = Modifier
+                .padding(horizontal = 16.dp)
                 .fillMaxWidth()
-                .background(
-                    color = Color.Transparent,
-                    shape = RectangleShape
-                )
+                .height(48.dp)
+                .background(color = Color.Transparent, shape = RectangleShape),
+            verticalAlignment = Alignment.CenterVertically, // Ensure alignment in the Row
+            horizontalArrangement = Arrangement.SpaceBetween,
         ) {
+            MonthPlaceholder()
+            Spacer(modifier = Modifier.width(16.dp))
+            YearPlaceholder()
+        }
+    }
+
+    @Composable
+    fun MonthPlaceholder() {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .pointerInput(Unit) {
+                    detectHorizontalDragGestures { _, dragAmount ->
+                        if (dragAmount > 0) {
+                            val newDate = selectedDate.minusMonths(1)
+                        } else if (dragAmount < 0) {
+                            val newDate = selectedDate.plusMonths(1)
+                        }
+                    }
+                }
+        ) {
+            IconButton(
+                onClick = { selectedDate = selectedDate.minusMonths(1) },
+                modifier = Modifier.padding(start = 8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.ArrowBack,
+                    contentDescription = "Previous Month"
+                )
+            }
             Text(
-                text = month.toString(),
-                modifier = Modifier
-                    .padding(8.dp)
-                    .fillMaxWidth(),
-                textAlign = TextAlign.Center,
+                text = "${selectedDate.month}",
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color.White,
-                maxLines = 1
+                color = Color.Black,
+                maxLines = 1,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(horizontal = 8.dp)
             )
+            IconButton(
+                onClick = { selectedDate = selectedDate.plusMonths(1) },
+                modifier = Modifier.padding(end = 8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.ArrowForward,
+                    contentDescription = "Next Month"
+                )
+            }
         }
     }
 
     @Composable
-    private fun MonthAndDaysBox(month: Month, year: Year) {
-        MonthNameDisplay(month)
-        DayForMonthDisplay(getMonthData(month, year))
+    fun YearPlaceholder() {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            IconButton(
+                onClick = { selectedDate = selectedDate.minusYears(1) },
+                modifier = Modifier.padding(start = 8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.ArrowBack,
+                    contentDescription = "Previous Year"
+                )
+            }
+
+            Text(
+                text = "${selectedDate.year}",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.Black,
+                maxLines = 1,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(horizontal = 8.dp)
+            )
+
+            IconButton(
+                onClick = { selectedDate = selectedDate.plusYears(1) },
+                modifier = Modifier.padding(end = 8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.ArrowForward,
+                    contentDescription = "Next Year"
+                )
+            }
+        }
     }
 
-    private fun getMonthData(month: Month, year: Year): Pair<DayOfWeek, Int> {
-        val date = LocalDate.of(year.value, month, 1)
+
+    private fun getMonthData(): Pair<DayOfWeek, Int> {
+        val date = LocalDate.of(selectedDate.year, selectedDate.month, 1)
         return Pair<DayOfWeek, Int>(
             first = date.dayOfWeek,
             second = date.lengthOfMonth()
@@ -110,66 +190,76 @@ class CalendarForm {
 
     @Composable
     private fun DayForMonthDisplay(data: Pair<DayOfWeek, Int>) {
-        val totalDaysInWeek = 7
+
         val daysInMonth = data.second
         val firstDayOffset = data.first.ordinal
 
         Column {
-            // First row with leading spaces and days of the first week
-            Row(modifier = Modifier.fillMaxWidth()) {
-                // Add leading spaces for days before the first day of the month
-                repeat(firstDayOffset) {
-                    Spacer(modifier = Modifier.size(40.dp))
-                }
 
-                // Add days of the first week
-                for (day in 1..(totalDaysInWeek - firstDayOffset)) {
-                    if (day <= daysInMonth) {
-                        DayBox(dayNumber = day)
-                    } else {
-                        Spacer(modifier = Modifier.size(40.dp)) // Fill remaining space
-                    }
-                }
-            }
+            var currentDay = 1
+            //Отображение первой недели с пустыми полями, при наличии
+            WeekRow(
+                currentDay = currentDay,
+                monthTotalDays = daysInMonth,
+                firstWeekDay = firstDayOffset
+            )
+            currentDay += firstDayOffset + 1
 
-            // Subsequent rows
-            var currentDay = totalDaysInWeek - firstDayOffset + 1
+            //Остальные недели
             while (currentDay <= daysInMonth) {
-                Row(modifier = Modifier.fillMaxWidth()) {
-                    for (dayOfWeek in 0 until totalDaysInWeek) {
-                        if (currentDay <= daysInMonth) {
-                            DayBox(dayNumber = currentDay)
-                            currentDay++
-                        } else {
-                            Spacer(modifier = Modifier.size(40.dp)) // Fill remaining space
+                WeekRow(currentDay = currentDay, monthTotalDays = daysInMonth)
+                currentDay += 7
+            }
+        }
+    }
+
+
+    @Preview
+    @Composable
+    private fun PreviewMonth() {
+        TrackerAppTheme {
+            DisplayMonth()
+        }
+    }
+
+
+    @Composable
+    private fun WeekRow(
+        currentDay: Int,
+        monthTotalDays: Int,
+        //Только для первой недели, чтобы пропустить пустые ячейки
+        firstWeekDay: Int = 0
+    ) {
+        TrackerAppTheme {
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 30.dp, max = 50.dp)
+            ) {
+                for (i in currentDay..currentDay + 6) {
+                    if (i in firstWeekDay + 1..monthTotalDays) {
+                        Box(
+                            modifier = Modifier
+                                .padding(4.dp)
+                                .background(
+                                    color = MaterialTheme.colorScheme.onPrimary,
+                                    shape = CutCornerShape(10)
+                                )
+                                .fillMaxHeight()
+                                .weight(1f),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = (i - firstWeekDay).toString(),
+                                fontSize = 16.sp,
+                                textAlign = TextAlign.Center
+                            )
                         }
+                    } else {
+                        Spacer(modifier = Modifier.weight(1f))
                     }
                 }
             }
         }
-    }
-}
-
-@Composable
-private fun DayBox(
-    dayNumber: Int,
-    isTransparent: Boolean = false,
-    modifier: Modifier = Modifier
-) {
-    Box(
-        modifier = modifier
-            .padding(4.dp)
-            .background(
-                color = if (isTransparent) Color.Transparent else Color.LightGray,
-                shape = CutCornerShape(10)
-            )
-            .size(45.dp),  // Fixed size to prevent expanding
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = dayNumber.toString(),
-            fontSize = 16.sp,
-            textAlign = TextAlign.Center
-        )
     }
 }
