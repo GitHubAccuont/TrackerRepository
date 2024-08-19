@@ -1,8 +1,6 @@
 package org.justme.trackerapp.ui.forms
 
-
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,11 +22,14 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -40,15 +41,20 @@ import java.time.LocalDate
 
 class CalendarForm {
 
-    private var selectedDate: LocalDate = LocalDate.now()
     private val daysOfWeekFull = DayOfWeek.entries.toTypedArray()
-
 
     @Composable
     fun DisplayMonth() {
-        Column(modifier = Modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.Center) {
-            MonthAndYearDisplay()
+
+        var selectedDate by remember { mutableStateOf(LocalDate.now()) }
+
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.Center
+        ) {
+            MonthAndYearDisplay(selectedDate) { newDate ->
+                selectedDate = newDate
+            }
             Row(
                 modifier = Modifier
                     .fillMaxWidth(),
@@ -76,44 +82,35 @@ class CalendarForm {
                     }
                 }
             }
-            DayForMonthDisplay(getMonthData())
+            DayForMonthDisplay(getMonthData(selectedDate))
         }
     }
 
     @Composable
-    fun MonthAndYearDisplay() {
+    fun MonthAndYearDisplay(selectedDate: LocalDate, onDateChange: (LocalDate) -> Unit) {
         Row(
             modifier = Modifier
                 .padding(horizontal = 16.dp)
                 .fillMaxWidth()
                 .height(48.dp)
                 .background(color = Color.Transparent, shape = RectangleShape),
-            verticalAlignment = Alignment.CenterVertically, // Ensure alignment in the Row
+            verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-            MonthPlaceholder()
-            Spacer(modifier = Modifier.width(16.dp))
-            YearPlaceholder()
+            //TODO: Добавить возможность свайпа к месяцу и году, при нажатии вызвать нормальные инструменты для выбора
+            MonthPlaceholder(selectedDate) { onDateChange(it) }
+            Spacer(modifier = Modifier.width(16.dp).weight(0.4f))
+            YearPlaceholder(selectedDate) { onDateChange(it) }
         }
     }
 
     @Composable
-    fun MonthPlaceholder() {
+    fun MonthPlaceholder(selectedDate: LocalDate, onDateChange: (LocalDate) -> Unit) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier
-                .pointerInput(Unit) {
-                    detectHorizontalDragGestures { _, dragAmount ->
-                        if (dragAmount > 0) {
-                            val newDate = selectedDate.minusMonths(1)
-                        } else if (dragAmount < 0) {
-                            val newDate = selectedDate.plusMonths(1)
-                        }
-                    }
-                }
         ) {
             IconButton(
-                onClick = { selectedDate = selectedDate.minusMonths(1) },
+                onClick = { onDateChange(selectedDate.minusMonths(1)) },
                 modifier = Modifier.padding(start = 8.dp)
             ) {
                 Icon(
@@ -131,8 +128,9 @@ class CalendarForm {
                 modifier = Modifier.padding(horizontal = 8.dp)
             )
             IconButton(
-                onClick = { selectedDate = selectedDate.plusMonths(1) },
-                modifier = Modifier.padding(end = 8.dp)
+                onClick = { onDateChange(selectedDate.plusMonths(1)) },
+                modifier = Modifier.padding(end = 8.dp),
+
             ) {
                 Icon(
                     imageVector = Icons.Default.ArrowForward,
@@ -143,12 +141,12 @@ class CalendarForm {
     }
 
     @Composable
-    fun YearPlaceholder() {
+    fun YearPlaceholder(selectedDate: LocalDate, onDateChange: (LocalDate) -> Unit) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             IconButton(
-                onClick = { selectedDate = selectedDate.minusYears(1) },
+                onClick = { onDateChange(selectedDate.minusYears(1)) },
                 modifier = Modifier.padding(start = 8.dp)
             ) {
                 Icon(
@@ -168,7 +166,7 @@ class CalendarForm {
             )
 
             IconButton(
-                onClick = { selectedDate = selectedDate.plusYears(1) },
+                onClick = { onDateChange(selectedDate.plusYears(1)) },
                 modifier = Modifier.padding(end = 8.dp)
             ) {
                 Icon(
@@ -179,10 +177,9 @@ class CalendarForm {
         }
     }
 
-
-    private fun getMonthData(): Pair<DayOfWeek, Int> {
+    private fun getMonthData(selectedDate: LocalDate): Pair<DayOfWeek, Int> {
         val date = LocalDate.of(selectedDate.year, selectedDate.month, 1)
-        return Pair<DayOfWeek, Int>(
+        return Pair(
             first = date.dayOfWeek,
             second = date.lengthOfMonth()
         )
@@ -190,14 +187,11 @@ class CalendarForm {
 
     @Composable
     private fun DayForMonthDisplay(data: Pair<DayOfWeek, Int>) {
-
         val daysInMonth = data.second
         val firstDayOffset = data.first.ordinal
 
         Column {
-
             var currentDay = 1
-            //Отображение первой недели с пустыми полями, при наличии
             WeekRow(
                 currentDay = currentDay,
                 monthTotalDays = daysInMonth,
@@ -205,14 +199,12 @@ class CalendarForm {
             )
             currentDay += firstDayOffset + 1
 
-            //Остальные недели
             while (currentDay <= daysInMonth) {
                 WeekRow(currentDay = currentDay, monthTotalDays = daysInMonth)
                 currentDay += 7
             }
         }
     }
-
 
     @Preview
     @Composable
@@ -222,12 +214,10 @@ class CalendarForm {
         }
     }
 
-
     @Composable
     private fun WeekRow(
         currentDay: Int,
         monthTotalDays: Int,
-        //Только для первой недели, чтобы пропустить пустые ячейки
         firstWeekDay: Int = 0
     ) {
         TrackerAppTheme {
