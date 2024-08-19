@@ -1,6 +1,7 @@
 package org.justme.trackerapp.ui.forms
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -25,6 +26,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -46,7 +48,7 @@ class CalendarForm {
     @Composable
     fun DisplayMonth() {
 
-        var selectedDate by remember { mutableStateOf(LocalDate.now()) }
+        var selectedDate by remember { mutableStateOf(LocalDate.of(LocalDate.now().year,LocalDate.now().month,1)) }
 
         Column(
             modifier = Modifier.fillMaxSize(),
@@ -82,9 +84,40 @@ class CalendarForm {
                     }
                 }
             }
-            DayForMonthDisplay(getMonthData(selectedDate))
+            DayForMonthDisplay(
+                selectedDate
+            )
         }
     }
+
+    data class CalendarEvent(
+        val name: String,
+        val date: LocalDate,
+        val color: Color,
+        val description: String = "",
+        val category: String = ""
+    )
+
+    val eventsByYearAndMonth: Map<Int, Map<Int, List<CalendarEvent>>> = mapOf(
+        2024 to mapOf(
+            8 to listOf(
+                CalendarEvent("Meeting", LocalDate.of(2024, 8, 5), Color.Red),
+                CalendarEvent("Conference", LocalDate.of(2024, 8, 12), Color.Blue)
+            ),
+            9 to listOf(
+                CalendarEvent("Workshop", LocalDate.of(2024, 9, 18), Color.Green)
+            )
+        )
+    )
+
+    fun getEventsForMonth(year: Int, month: Int): List<CalendarEvent> {
+        return eventsByYearAndMonth[year]?.get(month).orEmpty()
+    }
+
+    fun getEventsGroupedByDay(year: Int, month: Int): Map<Int, List<CalendarEvent>> {
+        return getEventsForMonth(year, month).groupBy { it.date.dayOfMonth }
+    }
+
 
     @Composable
     fun MonthAndYearDisplay(selectedDate: LocalDate, onDateChange: (LocalDate) -> Unit) {
@@ -177,31 +210,35 @@ class CalendarForm {
         }
     }
 
-    private fun getMonthData(selectedDate: LocalDate): Pair<DayOfWeek, Int> {
-        val date = LocalDate.of(selectedDate.year, selectedDate.month, 1)
-        return Pair(
-            first = date.dayOfWeek,
-            second = date.lengthOfMonth()
-        )
-    }
-
     @Composable
-    private fun DayForMonthDisplay(data: Pair<DayOfWeek, Int>) {
-        val daysInMonth = data.second
-        val firstDayOffset = data.first.ordinal
+    fun DayForMonthDisplay(date: LocalDate) {
+        //TODO: Нужно переделать, чтобы события обновлялись соответствующе с выбранным месяцем
+        val (events, setEvents) = rememberSaveable {
+            mutableStateOf(getEventsForMonth(date.year, date.monthValue).toMutableList())
+        }
+
+        fun addEvent(day: Int) {
+            val newEvent = CalendarEvent(
+                name = "New Event",
+                date = LocalDate.of(date.year, date.month, day),
+                color = Color.Black
+            )
+            setEvents(events.apply { add(newEvent) })
+        }
 
         Column {
+            val lengthOfMonth = date.lengthOfMonth()
+            val firstWeekDay = date.withDayOfMonth(1).dayOfWeek.ordinal
             var currentDay = 1
-            WeekRow(
-                currentDay = currentDay,
-                monthTotalDays = daysInMonth,
-                firstWeekDay = firstDayOffset
-            )
-            currentDay += firstDayOffset + 1
-
-            while (currentDay <= daysInMonth) {
-                WeekRow(currentDay = currentDay, monthTotalDays = daysInMonth)
-                currentDay += 7
+            while (currentDay <= lengthOfMonth) {
+                WeekRow(
+                    currentDay = currentDay,
+                    monthTotalDays = lengthOfMonth,
+                    firstWeekDay = if (currentDay == 1) firstWeekDay else 0,
+                    events = events,
+                    onDayClick = ::addEvent
+                )
+                currentDay += 7 - (if (currentDay == 1) firstWeekDay else 0)
             }
         }
     }
@@ -215,39 +252,45 @@ class CalendarForm {
     }
 
     @Composable
-    private fun WeekRow(
+    fun WeekRow(
         currentDay: Int,
         monthTotalDays: Int,
-        firstWeekDay: Int = 0
+        firstWeekDay: Int = 0,
+        events: List<CalendarEvent>,
+        onDayClick: (Int) -> Unit
     ) {
-        TrackerAppTheme {
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .heightIn(min = 30.dp, max = 50.dp)
-            ) {
-                for (i in currentDay..currentDay + 6) {
-                    if (i in firstWeekDay + 1..monthTotalDays) {
-                        Box(
-                            modifier = Modifier
-                                .padding(4.dp)
-                                .background(
-                                    color = MaterialTheme.colorScheme.onPrimary,
-                                    shape = CutCornerShape(10)
-                                )
-                                .fillMaxHeight()
-                                .weight(1f),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = (i - firstWeekDay).toString(),
-                                fontSize = 16.sp,
-                                textAlign = TextAlign.Center
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .heightIn(min = 30.dp, max = 50.dp)
+        ) {
+            for (i in currentDay..currentDay + 6) {
+                if (i in firstWeekDay + 1..monthTotalDays) {
+                    val day = i - firstWeekDay
+                    val event = events.find { it.date.dayOfMonth == day }
+
+                    Box(
+                        modifier = Modifier
+                            .padding(4.dp)
+                            .background(
+                                color = event?.color ?: MaterialTheme.colorScheme.onPrimary,
+                                shape = CutCornerShape(10)
                             )
-                        }
-                    } else {
-                        Spacer(modifier = Modifier.weight(1f))
+                            .fillMaxHeight()
+                            .weight(1f)
+                            .clickable {
+                                onDayClick(day)
+                            },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = day.toString(),
+                            fontSize = 16.sp,
+                            textAlign = TextAlign.Center
+                        )
                     }
+                } else {
+                    Spacer(modifier = Modifier.weight(1f))
                 }
             }
         }
