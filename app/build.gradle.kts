@@ -1,6 +1,10 @@
 plugins {
-    alias(libs.plugins.android.application)
-    alias(libs.plugins.jetbrains.kotlin.android)
+    id("com.android.application")
+    id("org.jetbrains.kotlin.android")
+    id("com.google.dagger.hilt.android")
+    id("com.google.devtools.ksp")
+    id("com.google.relay") version "0.3.12"
+    alias(libs.plugins.compose.compiler)
 }
 
 android {
@@ -18,6 +22,9 @@ android {
         vectorDrawables {
             useSupportLibrary = true
         }
+        ksp {
+            arg("room.schemaLocation", "$projectDir/schemas")
+        }
     }
 
     buildTypes {
@@ -30,17 +37,17 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
     kotlinOptions {
-        jvmTarget = "1.8"
+        jvmTarget = "17"
     }
     buildFeatures {
         compose = true
     }
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.1"
+        kotlinCompilerExtensionVersion = "1.5.8"
     }
     packaging {
         resources {
@@ -51,26 +58,32 @@ android {
 }
 
 dependencies {
-
-    implementation(libs.androidx.core.ktx)
-    implementation(libs.androidx.lifecycle.runtime.ktx)
-    implementation(libs.androidx.activity.compose)
-    implementation(platform(libs.androidx.compose.bom))
-    implementation(libs.androidx.ui)
-    implementation(libs.androidx.ui.graphics)
-    implementation(libs.androidx.ui.tooling.preview)
-    implementation(libs.androidx.material3)
-    testImplementation(libs.junit)
-    androidTestImplementation(libs.androidx.junit)
-    androidTestImplementation(libs.androidx.espresso.core)
-    androidTestImplementation(platform(libs.androidx.compose.bom))
-    androidTestImplementation(libs.androidx.ui.test.junit4)
-    debugImplementation(libs.androidx.ui.tooling)
-    debugImplementation(libs.androidx.ui.test.manifest)
-    implementation(libs.kotlinx.collections.immutable)
-
-    //Graphics dependencies
+    implementation(libs.com.google.devtools.ksp.gradle.plugin)
     val composeBom = platform("androidx.compose:compose-bom:2024.06.00")
     implementation(composeBom)
     androidTestImplementation(composeBom)
+
+    //ksp
+    ksp(libs.androidx.room.compiler)
+    implementation(libs.androidx.room.runtime)
+    annotationProcessor(libs.androidx.room.compiler)
+    //Для бд
+    implementation(libs.androidx.room.common)
+    implementation(libs.androidx.room.ktx)
+    implementation(libs.hilt.android)
+    ksp(libs.hilt.android.compiler)
+
+    //для работы с бд в jetpack
+    implementation(libs.androidx.lifecycle.viewmodel.android)
+    implementation(libs.androidx.activity.ktx)
+    implementation(libs.com.google.dagger.hilt.android.gradle.plugin)
+
+    //jetpack
+    implementation(libs.androidx.ui.tooling.preview)
+    debugImplementation(libs.androidx.ui.tooling)
+    implementation(libs.androidx.ui)
+    implementation(libs.androidx.foundation)
+    implementation(libs.androidx.material3)
+    implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
 }
