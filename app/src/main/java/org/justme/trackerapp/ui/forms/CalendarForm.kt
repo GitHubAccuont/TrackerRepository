@@ -42,6 +42,8 @@ import org.justme.trackerapp.calendarevent.db.CalendarViewModel
 import java.time.DayOfWeek
 import java.time.LocalDate
 
+
+//TODO: Добавить возможность корректной работы с событиями, просмотр и редактирование событий на определенную дату
 class CalendarForm {
 
     private val daysOfWeekFull = DayOfWeek.entries.toTypedArray()
@@ -147,7 +149,6 @@ class CalendarForm {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-            //TODO: Добавить возможность свайпа к месяцу и году, при нажатии вызвать нормальные инструменты для выбора
             BasicMonthSelector(selectedDate) { onDateChange(it) }
             Spacer(
                 modifier = Modifier
@@ -168,7 +169,8 @@ class CalendarForm {
                 modifier = Modifier.padding(start = 8.dp)
             ) {
                 Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Previous Month"
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "Previous Month"
                 )
             }
             Text(
@@ -186,7 +188,8 @@ class CalendarForm {
 
                 ) {
                 Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "Next Month"
+                    imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                    contentDescription = "Next Month"
                 )
             }
         }
@@ -202,7 +205,8 @@ class CalendarForm {
                 modifier = Modifier.padding(start = 8.dp)
             ) {
                 Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Previous Year"
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "Previous Year"
                 )
             }
 
@@ -221,7 +225,8 @@ class CalendarForm {
                 modifier = Modifier.padding(end = 8.dp)
             ) {
                 Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "Next Year"
+                    imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                    contentDescription = "Next Year"
                 )
             }
         }

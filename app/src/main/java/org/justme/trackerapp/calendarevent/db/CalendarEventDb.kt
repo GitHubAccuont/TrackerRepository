@@ -5,10 +5,10 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import org.justme.trackerapp.calendarevent.dao.CalendarEventDao
 import org.justme.trackerapp.calendarevent.data.CalendarEvent
-import org.justme.trackerapp.calendarevent.data.RepeatEnumConverter
+import org.justme.trackerapp.calendarevent.data.Converters
 
 @Database(entities = [CalendarEvent::class], version = 1)
-@TypeConverters(RepeatEnumConverter::class)
+@TypeConverters(Converters::class)
 abstract class CalendarEventDb : RoomDatabase() {
     abstract fun calendarEventDao(): CalendarEventDao
 }

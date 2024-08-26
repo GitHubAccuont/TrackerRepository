@@ -3,6 +3,7 @@ package org.justme.trackerapp.calendarevent.dao
 import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Insert
+import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
 import org.justme.trackerapp.calendarevent.data.CalendarEvent
@@ -11,10 +12,10 @@ import java.time.LocalDate
 @Dao
 interface CalendarEventDao {
 
-    @Insert
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertEvent(event: CalendarEvent)
 
-    @Update
+    @Update(onConflict = OnConflictStrategy.REPLACE)
     suspend fun updateEvent(event: CalendarEvent)
 
     @Delete
@@ -35,15 +36,15 @@ interface CalendarEventDao {
     @Query("SELECT * FROM calendar_event WHERE (date BETWEEN :monthStart AND :monthEnd)")
     fun getEventsForMonth(monthStart: LocalDate, monthEnd: LocalDate): List<CalendarEvent>
 
-    @Query("SELECT * FROM calendar_event WHERE (date BEFORE :currentDate)")
-    fun getOutdatedEvents(date: LocalDate): List<CalendarEvent>
+    @Query("SELECT * FROM calendar_event WHERE date < :currentDate")
+    fun getOutdatedEvents(currentDate: LocalDate): List<CalendarEvent>
 
     @Query(
         "DELETE FROM calendar_event " +
-                "WHERE date < current_date " +
+                "WHERE :date < current_date " +
                 "AND repeat_interval = 'NONE'"
     )
-    fun deleteOutdatedEvents(date: LocalDate): List<CalendarEvent>
+    fun deleteOutdatedEvents(date: LocalDate)
 
     @Query(
         """

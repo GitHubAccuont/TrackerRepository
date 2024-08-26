@@ -22,6 +22,9 @@ android {
         vectorDrawables {
             useSupportLibrary = true
         }
+        ksp {
+            arg("room.schemaLocation", "$projectDir/schemas")
+        }
     }
 
     buildTypes {
@@ -60,18 +63,21 @@ dependencies {
     implementation(composeBom)
     androidTestImplementation(composeBom)
 
-
     //ksp
     ksp(libs.androidx.room.compiler)
+    implementation(libs.androidx.room.runtime)
+    annotationProcessor(libs.androidx.room.compiler)
     //Для бд
     implementation(libs.androidx.room.common)
     implementation(libs.androidx.room.ktx)
     implementation(libs.hilt.android)
     ksp(libs.hilt.android.compiler)
+
     //для работы с бд в jetpack
     implementation(libs.androidx.lifecycle.viewmodel.android)
     implementation(libs.androidx.activity.ktx)
     implementation(libs.com.google.dagger.hilt.android.gradle.plugin)
+
     //jetpack
     implementation(libs.androidx.ui.tooling.preview)
     debugImplementation(libs.androidx.ui.tooling)

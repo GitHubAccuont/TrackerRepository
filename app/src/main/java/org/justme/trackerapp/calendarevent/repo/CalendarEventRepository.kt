@@ -4,8 +4,13 @@ import org.justme.trackerapp.calendarevent.dao.CalendarEventDao
 import org.justme.trackerapp.calendarevent.data.CalendarEvent
 import org.justme.trackerapp.calendarevent.data.RepeatEnum
 import java.time.LocalDate
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class CalendarEventRepository(private val calendarEventDao: CalendarEventDao) {
+@Singleton
+class CalendarEventRepository @Inject constructor(
+    private val calendarEventDao: CalendarEventDao
+) {
 
     fun getEventsForDate(date: LocalDate): List<CalendarEvent> {
         return calendarEventDao.getEventsForDate(date)

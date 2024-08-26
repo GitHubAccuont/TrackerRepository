@@ -11,6 +11,7 @@ lifecycleViewmodelAndroid = "2.8.4"
 activityKtx = "1.9.1"
 comGoogleDaggerHiltAndroidGradlePlugin = "2.52"
 comGoogleDevtoolsKspGradlePlugin = "2.0.20-1.0.24"
+roomRuntime = "2.6.1"
 
 [libraries]
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activityKtx" }
@@ -22,6 +23,7 @@ androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref =
 androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "roomKtx" }
 androidx-lifecycle-viewmodel-android = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-android", version.ref = "lifecycleViewmodelAndroid" }
 androidx-activity-ktx = { group = "androidx.activity", name = "activity-ktx", version.ref = "activityKtx" }
+androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "roomRuntime" }
 androidx-ui = { module = "androidx.compose.ui:ui" }
 androidx-ui-tooling = { module = "androidx.compose.ui:ui-tooling" }
 androidx-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview" }
