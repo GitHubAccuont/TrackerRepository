@@ -12,12 +12,11 @@ class CalendarEventRepository @Inject constructor(
     private val calendarEventDao: CalendarEventDao
 ) {
 
-    fun getEventsForDate(date: LocalDate): List<CalendarEvent> {
+    suspend fun getEventsForDate(date: LocalDate): List<CalendarEvent> {
         return calendarEventDao.getEventsForDate(date)
     }
 
-    fun getEventsForMonth(date: LocalDate): List<Int> {
-
+    suspend fun getEventsForMonth(date: LocalDate): List<Int> {
         val monthStart = date.withDayOfMonth(1)
         val monthEnd = date.withDayOfMonth(date.lengthOfMonth())
 
@@ -39,13 +38,12 @@ class CalendarEventRepository @Inject constructor(
         return eventDays.distinct().sorted()
     }
 
-    fun updateOutdatedEvents(currentDate: LocalDate) {
+    suspend fun updateOutdatedEvents(currentDate: LocalDate) {
         calendarEventDao.updateDailyRepeatingEvents(currentDate)
         calendarEventDao.updateWeeklyRepeatingEvents(currentDate)
         calendarEventDao.updateMonthlyRepeatingEvents(currentDate)
         calendarEventDao.updateYearlyRepeatingEvents(currentDate)
     }
-
 
     suspend fun saveNewEvent(event: CalendarEvent) {
         return calendarEventDao.insertEvent(event)
@@ -55,7 +53,7 @@ class CalendarEventRepository @Inject constructor(
         calendarEventDao.deleteEvent(event)
     }
 
-    suspend fun uploadEvent(event: CalendarEvent) {
-        calendarEventDao.insertEvent(event)
+    suspend fun updateEvent(event: CalendarEvent) {
+        calendarEventDao.updateEvent(event)
     }
 }
