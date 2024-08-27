@@ -13,7 +13,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -23,6 +25,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -58,84 +62,17 @@ class CalendarForm {
             MonthAndYearDisplay(selectedDate) { newDate ->
                 selectedDate = newDate
             }
-            Row(modifier = Modifier.fillMaxWidth()) {
-                daysOfWeekFull.forEach { day ->
-                    Box(
-                        Modifier
-                            .weight(1f)
-                            .padding(4.dp)
-                            .background(
-                                color = Color(0xFFBB86FC),
-                                shape = CutCornerShape(10)
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = day.name,
-                            modifier = Modifier.padding(8.dp),
-                            textAlign = TextAlign.Center,
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White,
-                            maxLines = 1
-                        )
-                    }
+            DayOfWeekNamesDisplay()
+            Box(){
+                DayForMonthDisplay(selectedDate, viewModel) { newDate ->
+                    selectedDate = newDate
                 }
-            }
-            DayForMonthDisplay(selectedDate, viewModel)
+
+            EventsForDateDisplay(viewModel,selectedDate)}
+
         }
     }
 
-
-    @Composable
-    fun DayForMonthDisplay(date: LocalDate, viewModel: CalendarViewModel) {
-        Column {
-            val lengthOfMonth = date.lengthOfMonth()
-            val firstWeekDay = date.withDayOfMonth(1).dayOfWeek.ordinal
-            var currentDay = 1
-
-            while (currentDay <= lengthOfMonth) {
-                Row(
-                    Modifier
-                        .fillMaxWidth()
-                        .heightIn(min = 30.dp, max = 50.dp)
-                ) {
-                    for (i in currentDay..currentDay + 6) {
-                        if (i in firstWeekDay + 1..lengthOfMonth) {
-                            val day = i - firstWeekDay
-
-                            Box(
-                                modifier = Modifier
-                                    .padding(4.dp)
-                                    .background(
-                                        MaterialTheme.colorScheme.onPrimary,
-                                        shape = CutCornerShape(10)
-                                    )
-                                    .fillMaxHeight()
-                                    .weight(1f)
-                                    .clickable {
-                                        // Launching a coroutine to call the suspend function
-                                        viewModel.viewModelScope.launch {
-                                            viewModel.addEvent(day, date)
-                                        }
-                                    },
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = day.toString(),
-                                    fontSize = 16.sp,
-                                    textAlign = TextAlign.Center
-                                )
-                            }
-                        } else {
-                            Spacer(modifier = Modifier.weight(1f))
-                        }
-                    }
-                }
-                currentDay += 7 - (if (currentDay == 1) firstWeekDay else 0)
-            }
-        }
-    }
 
     //Секция под отображение месяца и года
     @Composable
@@ -170,7 +107,7 @@ class CalendarForm {
             ) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Previous Month"
+                    contentDescription = "Предыдущий месяц"
                 )
             }
             Text(
@@ -189,7 +126,7 @@ class CalendarForm {
                 ) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                    contentDescription = "Next Month"
+                    contentDescription = "Следующий месяц"
                 )
             }
         }
@@ -206,7 +143,7 @@ class CalendarForm {
             ) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Previous Year"
+                    contentDescription = "Предыдущий год"
                 )
             }
 
@@ -226,10 +163,120 @@ class CalendarForm {
             ) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                    contentDescription = "Next Year"
+                    contentDescription = "Следующий год"
                 )
             }
         }
     }
 
+    //Отображение дней недели
+    @Composable
+    fun DayOfWeekNamesDisplay(){
+        Row(modifier = Modifier.fillMaxWidth()) {
+            daysOfWeekFull.forEach { day ->
+                Box(
+                    Modifier
+                        .weight(1f)
+                        .padding(4.dp)
+                        .background(
+                            color = Color(0xFFBB86FC),
+                            shape = CutCornerShape(10)
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = day.name,
+                        modifier = Modifier.padding(8.dp),
+                        textAlign = TextAlign.Center,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White,
+                        maxLines = 1
+                    )
+                }
+            }
+        }
+    }
+
+    @Composable
+    fun DayForMonthDisplay(date: LocalDate, viewModel: CalendarViewModel, onDateChange: (LocalDate) -> Unit) {
+        Column {
+            val lengthOfMonth = date.lengthOfMonth()
+            val firstWeekDay = date.withDayOfMonth(1).dayOfWeek.ordinal
+
+            // Лист дней с событиями (нельзя выполнить напрямую чтобы не замедлять программу вычислениями из бд в ГИ)
+            LaunchedEffect(date) {
+                viewModel.loadEventDaysForMonth(date)
+            }
+
+            val eventDays by viewModel.eventDays.collectAsState()
+            var currentDay = 1
+
+            while (currentDay <= lengthOfMonth) {
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 30.dp, max = 50.dp)
+                ) {
+                    for (i in currentDay..currentDay + 6) {
+                        if (i in firstWeekDay + 1..lengthOfMonth) {
+                            val day = i - firstWeekDay
+
+                            Box(
+                                modifier = Modifier
+                                    .padding(4.dp)
+                                    .background(
+                                        MaterialTheme.colorScheme.onPrimary,
+                                        shape = CutCornerShape(10)
+                                    )
+                                    .fillMaxHeight()
+                                    .weight(1f)
+                                    .clickable {
+                                        onDateChange(date.withDayOfMonth(day))
+                                        viewModel.viewModelScope.launch {
+                                            viewModel.addEvent(day, date)
+                                        }
+                                    },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = day.toString(),
+                                    fontSize = 16.sp,
+                                    textAlign = TextAlign.Center
+                                )
+
+                                // Выделение дней с событиями
+                                if (day in eventDays) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(8.dp)
+                                            .align(Alignment.BottomEnd)
+                                            .background(Color.Red, shape = CircleShape)
+                                    )
+                                }
+                            }
+                        } else {
+                            Spacer(modifier = Modifier.weight(1f))
+                        }
+                    }
+                }
+                currentDay += 7 - (if (currentDay == 1) firstWeekDay else 0)
+            }
+        }
+    }
+
+    /*
+    // Секция под вывод событий на выбранную дату
+    */
+
+    @Composable
+    fun EventsForDateDisplay(viewModel: CalendarViewModel, date: LocalDate)
+    {
+//        LaunchedEffect(date) {
+//            viewModel.loadEventsForDate(date)
+//        }
+//
+//        val events by viewModel.eventDays.collectAsState()
+
+    }
 }

@@ -12,32 +12,34 @@ import java.time.LocalDate
 @Dao
 interface CalendarEventDao {
 
-    @Insert(onConflict = OnConflictStrategy.IGNORE)
-    suspend fun insertEvent(event: CalendarEvent)
 
-    @Update(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun updateEvent(event: CalendarEvent)
+        @Insert(onConflict = OnConflictStrategy.IGNORE)
+        suspend fun insertEvent(event: CalendarEvent)
 
-    @Delete
-    suspend fun deleteEvent(event: CalendarEvent)
+        @Update(onConflict = OnConflictStrategy.REPLACE)
+        suspend fun updateEvent(event: CalendarEvent)
 
-    @Query("SELECT * FROM calendar_event WHERE date = :date AND repeat_interval = 'NONE'")
-    fun getEventsForDate(date: LocalDate): List<CalendarEvent>
+        @Delete
+        suspend fun deleteEvent(event: CalendarEvent)
 
-    @Query("SELECT DISTINCT strftime('%d', date) AS day FROM calendar_event WHERE strftime('%Y-%m', date) = :yearMonth AND repeat_interval = 'NONE'")
-    fun getOneTimeEventDays(yearMonth: String): List<Int>
+        @Query("SELECT * FROM calendar_event WHERE date = :date AND repeat_interval = 'NONE'")
+        suspend fun getEventsForDate(date: LocalDate): List<CalendarEvent>
 
-    @Query("SELECT DISTINCT strftime('%d', date) AS day FROM calendar_event WHERE repeat_interval = 'WEEKLY'")
-    fun getWeeklyEventDays(): List<Int>
+        @Query("SELECT DISTINCT strftime('%d', date) AS day FROM calendar_event WHERE strftime('%Y-%m', date) = :yearMonth AND repeat_interval = 'NONE'")
+        suspend fun getOneTimeEventDays(yearMonth: String): List<Int>
 
-    @Query("SELECT DISTINCT strftime('%d', date) AS day FROM calendar_event WHERE repeat_interval IN ('DAILY', 'MONTHLY', 'YEARLY')")
-    fun getOtherRepeatableEventDays(): List<Int>
+        @Query("SELECT DISTINCT strftime('%d', date) AS day FROM calendar_event WHERE repeat_interval = 'WEEKLY'")
+        suspend fun getWeeklyEventDays(): List<Int>
 
-    @Query("SELECT * FROM calendar_event WHERE (date BETWEEN :monthStart AND :monthEnd)")
-    fun getEventsForMonth(monthStart: LocalDate, monthEnd: LocalDate): List<CalendarEvent>
+        @Query("SELECT DISTINCT strftime('%d', date) AS day FROM calendar_event WHERE repeat_interval IN ('DAILY', 'MONTHLY', 'YEARLY')")
+        suspend fun getOtherRepeatableEventDays(): List<Int>
 
-    @Query("SELECT * FROM calendar_event WHERE date < :currentDate")
-    fun getOutdatedEvents(currentDate: LocalDate): List<CalendarEvent>
+        @Query("SELECT * FROM calendar_event WHERE (date BETWEEN :monthStart AND :monthEnd)")
+        suspend fun getEventsForMonth(monthStart: LocalDate, monthEnd: LocalDate): List<CalendarEvent>
+
+        @Query("SELECT * FROM calendar_event WHERE date < :currentDate")
+        suspend fun getOutdatedEvents(currentDate: LocalDate): List<CalendarEvent>
+
 
     @Query(
         "DELETE FROM calendar_event " +
