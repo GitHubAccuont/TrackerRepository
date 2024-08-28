@@ -1,6 +1,7 @@
 package org.justme.trackerapp.ui.forms
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -15,11 +16,17 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.CutCornerShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -39,15 +46,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
-import kotlinx.coroutines.launch
+import org.justme.trackerapp.calendarevent.data.CalendarEvent
 import org.justme.trackerapp.calendarevent.db.CalendarViewModel
 import java.time.DayOfWeek
 import java.time.LocalDate
 
 
-//TODO: Добавить возможность корректной работы с событиями, просмотр и редактирование событий на определенную дату
 class CalendarForm {
 
     private val daysOfWeekFull = DayOfWeek.entries.toTypedArray()
@@ -58,17 +63,46 @@ class CalendarForm {
     ) {
         var selectedDate by remember { mutableStateOf(LocalDate.now()) }
 
-        Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.Center) {
-            MonthAndYearDisplay(selectedDate) { newDate ->
-                selectedDate = newDate
+        // Структура календарика
+        Column(modifier = Modifier.fillMaxSize()) {
+
+            // Выбор даты и название дней недели
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 16.dp)
+                    .wrapContentHeight() // Adjusts height to content
+            ) {
+                // Отображение месяца и года и их выбор
+                MonthAndYearDisplay(selectedDate) { newDate ->
+                    selectedDate = newDate
+                }
+                // Названия дней недели
+                DayOfWeekNamesDisplay()
             }
-            DayOfWeekNamesDisplay()
-            Box(){
+
+
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .padding(8.dp)
+            ) {
+                // Дни месяца
                 DayForMonthDisplay(selectedDate, viewModel) { newDate ->
                     selectedDate = newDate
                 }
 
-            EventsForDateDisplay(viewModel,selectedDate)}
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                        .padding(top = 16.dp)
+                ) {
+                // События на выбранный день
+                    EventsForDateDisplay(viewModel, selectedDate)
+                }
+            }
 
         }
     }
@@ -171,7 +205,7 @@ class CalendarForm {
 
     //Отображение дней недели
     @Composable
-    fun DayOfWeekNamesDisplay(){
+    fun DayOfWeekNamesDisplay() {
         Row(modifier = Modifier.fillMaxWidth()) {
             daysOfWeekFull.forEach { day ->
                 Box(
@@ -199,7 +233,11 @@ class CalendarForm {
     }
 
     @Composable
-    fun DayForMonthDisplay(date: LocalDate, viewModel: CalendarViewModel, onDateChange: (LocalDate) -> Unit) {
+    fun DayForMonthDisplay(
+        date: LocalDate,
+        viewModel: CalendarViewModel,
+        onDateChange: (LocalDate) -> Unit
+    ) {
         Column {
             val lengthOfMonth = date.lengthOfMonth()
             val firstWeekDay = date.withDayOfMonth(1).dayOfWeek.ordinal
@@ -211,13 +249,17 @@ class CalendarForm {
 
             val eventDays by viewModel.eventDays.collectAsState()
             var currentDay = 1
+            val selectedDay = date.dayOfMonth
 
+            // Отрисовка дней месяца
             while (currentDay <= lengthOfMonth) {
+                //Столбец с неделями
                 Row(
                     Modifier
                         .fillMaxWidth()
                         .heightIn(min = 30.dp, max = 50.dp)
                 ) {
+                    // Отрисовка каждой недели
                     for (i in currentDay..currentDay + 6) {
                         if (i in firstWeekDay + 1..lengthOfMonth) {
                             val day = i - firstWeekDay
@@ -226,16 +268,13 @@ class CalendarForm {
                                 modifier = Modifier
                                     .padding(4.dp)
                                     .background(
-                                        MaterialTheme.colorScheme.onPrimary,
+                                        color = if (day == selectedDay) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onPrimary,
                                         shape = CutCornerShape(10)
                                     )
                                     .fillMaxHeight()
                                     .weight(1f)
                                     .clickable {
                                         onDateChange(date.withDayOfMonth(day))
-                                        viewModel.viewModelScope.launch {
-                                            viewModel.addEvent(day, date)
-                                        }
                                     },
                                 contentAlignment = Alignment.Center
                             ) {
@@ -270,13 +309,92 @@ class CalendarForm {
     */
 
     @Composable
-    fun EventsForDateDisplay(viewModel: CalendarViewModel, date: LocalDate)
-    {
-//        LaunchedEffect(date) {
-//            viewModel.loadEventsForDate(date)
-//        }
-//
-//        val events by viewModel.eventDays.collectAsState()
+    fun EventsForDateDisplay(viewModel: CalendarViewModel, date: LocalDate) {
+        LaunchedEffect(date) {
+            viewModel.loadEventsForDate(date)
+        }
 
+        val events by viewModel.eventsForDate.collectAsState()
+        val sortedEvents = events.sortedBy { it.time }
+        Box {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp)
+            ) {
+                items(sortedEvents) { event ->
+                    EventRow(event)
+                }
+            }
+            FloatingActionButton(
+                onClick = {
+                    //TODO: Сделать форму для создания нового события
+                },
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(16.dp)
+            ) {
+                Icon(Icons.Default.Add, contentDescription = "Add Event")
+            }
+        }
+
+    }
+
+    // Шаблон для столбика с событием
+    @Composable
+    fun EventRow(event: CalendarEvent) {
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp)
+                .border(
+                    1.dp,
+                    MaterialTheme.colorScheme.primary,
+                    shape = MaterialTheme.shapes.medium
+                )
+                .padding(8.dp)
+                .fillMaxHeight(0.2f)
+        ) {
+            Text(
+                text = event.name,
+                style = MaterialTheme.typography.bodyLarge,
+                modifier = Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .padding(bottom = 8.dp)
+                    .fillMaxHeight(0.2f)
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(50.dp)
+                        .background(
+                            MaterialTheme.colorScheme.secondary,
+                            shape = RoundedCornerShape(4.dp)
+                        )
+                        .padding(4.dp)
+                        .fillMaxHeight(0.8f)
+                ) {
+                    Text(
+                        text = "${event.time.hour}:${event.time.minute}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSecondary,
+                        modifier = Modifier.align(Alignment.Center)
+                    )
+                }
+
+                Text(
+                    text = event.details,
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier
+                        .padding(start = 16.dp)
+                        .weight(1f)
+                )
+            }
+        }
     }
 }

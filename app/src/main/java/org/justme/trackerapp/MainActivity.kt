@@ -6,7 +6,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import dagger.hilt.android.AndroidEntryPoint
 import org.justme.trackerapp.ui.forms.CalendarForm
-import org.justme.trackerapp.ui.theme.TrackerAppTheme
+import org.justme.trackerapp.ui.theme.AppTheme
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -16,7 +16,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         TrackerApp()
         setContent {
-            TrackerAppTheme {
+            AppTheme {
                 CalendarForm().DisplayMonth()
             }
         }
