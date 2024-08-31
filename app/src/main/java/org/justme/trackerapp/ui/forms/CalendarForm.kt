@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.CutCornerShape
@@ -26,6 +27,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Button
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -59,11 +62,13 @@ class CalendarForm(private val viewModel: CalendarViewModel) {
 
     private val daysOfWeekFull = DayOfWeek.entries.toTypedArray()
 
+    private val repeatEnumValues = RepeatEnum.entries.toTypedArray()
+
     @Composable
     fun DisplayMonth() {
         var selectedDate by remember { mutableStateOf(LocalDate.now()) }
 
-            viewModel.selectDate(selectedDate)
+        viewModel.selectDate(selectedDate)
 
         // Структура календарика
         Column(modifier = Modifier.fillMaxSize()) {
@@ -73,7 +78,7 @@ class CalendarForm(private val viewModel: CalendarViewModel) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 16.dp)
-                    .wrapContentHeight() // Adjusts height to content
+                    .wrapContentHeight()
             ) {
                 // Отображение месяца и года и их выбор
                 MonthAndYearDisplay(selectedDate) { newDate ->
@@ -187,7 +192,7 @@ class CalendarForm(private val viewModel: CalendarViewModel) {
                 text = "${selectedDate.year}",
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color.Black,
+                color = MaterialTheme.colorScheme.onBackground,
                 maxLines = 1,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(horizontal = 8.dp)
@@ -215,7 +220,7 @@ class CalendarForm(private val viewModel: CalendarViewModel) {
                         .weight(1f)
                         .padding(4.dp)
                         .background(
-                            color = Color(0xFFBB86FC),
+                            color = MaterialTheme.colorScheme.primary,
                             shape = CutCornerShape(10)
                         ),
                     contentAlignment = Alignment.Center
@@ -226,7 +231,7 @@ class CalendarForm(private val viewModel: CalendarViewModel) {
                         textAlign = TextAlign.Center,
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.onPrimary,
                         maxLines = 1
                     )
                 }
@@ -244,7 +249,8 @@ class CalendarForm(private val viewModel: CalendarViewModel) {
         Column {
             val lengthOfMonth = date.lengthOfMonth()
             val firstWeekDay = date.withDayOfMonth(1).dayOfWeek.ordinal
-            val totalDays = lengthOfMonth + firstWeekDay // Длина месяца с учетом разницы в начало первой недели
+            val totalDays =
+                lengthOfMonth + firstWeekDay // Длина месяца с учетом разницы в начало первой недели
             val rows = (totalDays + 6) / 7 //Число неделей в месяце
 
             val eventDays by viewModel.eventDays.collectAsState()
@@ -267,7 +273,7 @@ class CalendarForm(private val viewModel: CalendarViewModel) {
                                 modifier = Modifier
                                     .padding(4.dp)
                                     .background(
-                                        color = if (day == selectedDay) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onPrimary,
+                                        color = if (day == selectedDay) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer,
                                         shape = CutCornerShape(10)
                                     )
                                     .fillMaxHeight()
@@ -280,7 +286,8 @@ class CalendarForm(private val viewModel: CalendarViewModel) {
                                 Text(
                                     text = day.toString(),
                                     fontSize = 16.sp,
-                                    textAlign = TextAlign.Center
+                                    textAlign = TextAlign.Center,
+                                    color = MaterialTheme.colorScheme.onSecondaryContainer
                                 )
 
                                 // Подсветка дней в которых есть события
@@ -289,7 +296,10 @@ class CalendarForm(private val viewModel: CalendarViewModel) {
                                         modifier = Modifier
                                             .size(8.dp)
                                             .align(Alignment.TopEnd)
-                                            .background(MaterialTheme.colorScheme.outline, shape = CircleShape)
+                                            .background(
+                                                MaterialTheme.colorScheme.secondary,
+                                                shape = CircleShape
+                                            )
                                     )
                                 }
                             }
@@ -315,40 +325,38 @@ class CalendarForm(private val viewModel: CalendarViewModel) {
 
 
         Box {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp)
-            ) {
-                items(sortedEvents) { event ->
-                    EventRow(event)
+            if (showForm) {
+                EventCreationForm(
+                    selectedDate = date,
+                    onSave = { event ->
+                        viewModel.addEvent(event)
+                        showForm = false
+                    }
+                )
+            } else {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(16.dp)
+                ) {
+                    items(sortedEvents) { event ->
+                        EventRow(event)
+                    }
                 }
             }
 
             FloatingActionButton(
                 onClick = {
-                    !showForm
+                    showForm = !showForm
                 },
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
                     .padding(16.dp)
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Add Event")
-            }
-
-            if (showForm) {
-                EventCreationForm(
-                    selectedDate = date,
-                    onSave = { event ->
-                        viewModel.addEvent(
-                            event
-                        )
-                        showForm = false
-                    },
-                    onCancel = {
-                        showForm = false
-                    }
-                )
+                if (showForm)
+                    Icon(Icons.Default.Close, contentDescription = "Скрыть")
+                else
+                    Icon(Icons.Default.Add, contentDescription = "Добавить событие")
             }
         }
     }
@@ -376,7 +384,8 @@ class CalendarForm(private val viewModel: CalendarViewModel) {
                 modifier = Modifier
                     .align(Alignment.CenterHorizontally)
                     .padding(bottom = 8.dp)
-                    .fillMaxHeight(0.2f)
+                    .fillMaxHeight(0.2f),
+                color = MaterialTheme.colorScheme.secondary
             )
 
             Row(
@@ -408,6 +417,16 @@ class CalendarForm(private val viewModel: CalendarViewModel) {
                         .padding(start = 16.dp)
                         .weight(1f)
                 )
+                FloatingActionButton(
+                    onClick = {
+                        viewModel.removeEvent(event)
+                    },
+                    modifier = Modifier
+                        .padding(16.dp)
+                        .background(Color.Transparent)
+                ) {
+                    Icon(Icons.Default.Delete, contentDescription = "Добавить событие")
+                }
             }
         }
     }
@@ -416,8 +435,7 @@ class CalendarForm(private val viewModel: CalendarViewModel) {
     @Composable
     fun EventCreationForm(
         selectedDate: LocalDate,
-        onSave: (CalendarEvent) -> Unit,
-        onCancel: () -> Unit
+        onSave: (CalendarEvent) -> Unit
     ) {
         var name by remember { mutableStateOf("") }
         var details by remember { mutableStateOf("") }
@@ -425,23 +443,34 @@ class CalendarForm(private val viewModel: CalendarViewModel) {
         var repeatInterval by remember { mutableStateOf(RepeatEnum.NONE) }
         var repeatEndDate by remember { mutableStateOf<LocalDate?>(null) }
 
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text("Create New Event", style = MaterialTheme.typography.bodyMedium)
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            TextField(
-                value = name,
-                onValueChange = { name = it },
-                label = { Text("Event Name") }
+        Column(
+            modifier = Modifier
+                .padding(16.dp)
+                .fillMaxSize(),
+            verticalArrangement = Arrangement.SpaceAround
+        ) {
+            Text(
+                "Данные события",
+                style = MaterialTheme.typography.bodyLarge,
+                modifier = Modifier.align(Alignment.CenterHorizontally)
             )
 
             Spacer(modifier = Modifier.height(8.dp))
 
             TextField(
+                modifier = Modifier.fillMaxWidth(),
+                value = name,
+                onValueChange = { name = it },
+                label = { Text("Название") },
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            TextField(
+                modifier = Modifier.fillMaxWidth(),
                 value = details,
                 onValueChange = { details = it },
-                label = { Text("Details") }
+                label = { Text("Описание") }
             )
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -453,10 +482,7 @@ class CalendarForm(private val viewModel: CalendarViewModel) {
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            RepeatIntervalPicker(
-                repeatInterval = repeatInterval,
-                onRepeatIntervalChange = { repeatInterval = it }
-            )
+            RepeatIntervalPicker() { repeatInterval = it }
 
             Spacer(modifier = Modifier.height(8.dp))
 
@@ -471,14 +497,14 @@ class CalendarForm(private val viewModel: CalendarViewModel) {
                 )
                 onSave(newEvent)
             }) {
-                Text("Save")
+                Text(
+                    "Добавить",
+                    modifier = Modifier.align(Alignment.Bottom),
+                    color = MaterialTheme.colorScheme.onPrimary
+                )
             }
 
             Spacer(modifier = Modifier.height(8.dp))
-
-            Button(onClick = onCancel) {
-                Text("Cancel")
-            }
         }
     }
 
@@ -488,13 +514,32 @@ class CalendarForm(private val viewModel: CalendarViewModel) {
 
     }
 
-    // Выбор интервала повторений
+    // Выбор интервала повторений у события
     @Composable
-    fun RepeatIntervalPicker(
-        repeatInterval: RepeatEnum,
-        onRepeatIntervalChange: (RepeatEnum) -> Unit
-    ) {
+    fun RepeatIntervalPicker(onSelectionChange: (RepeatEnum) -> Unit) {
+        var selectedIndex by remember { mutableStateOf(0) }
 
+        LazyRow(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(50.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            items(repeatEnumValues) { item ->
+                Text(
+                    text = item.name,
+                    fontSize = 20.sp,
+                    fontWeight = if (selectedIndex == repeatEnumValues.indexOf(item)) FontWeight.Bold else FontWeight.Normal,
+                    color = if (selectedIndex == repeatEnumValues.indexOf(item)) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary,
+                    modifier = Modifier
+                        .padding(horizontal = 16.dp)
+                        .clickable {
+                            selectedIndex = repeatEnumValues.indexOf(item)
+                            onSelectionChange(item)
+                        }
+                )
+            }
+        }
     }
-
 }

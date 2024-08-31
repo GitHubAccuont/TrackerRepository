@@ -13,7 +13,24 @@ class CalendarEventRepository @Inject constructor(
 ) {
 
     suspend fun getEventsForDate(date: LocalDate): List<CalendarEvent> {
-        return calendarEventDao.getEventsForDate(date)
+
+        val monthStart = date.withDayOfMonth(1)
+        val monthEnd = date.withDayOfMonth(date.lengthOfMonth())
+
+        // Все события повотряющиеся каждую неделю
+        val weeklyEvents = calendarEventDao.getWeeklyEventsForDate(monthStart, monthEnd)
+
+        // Событий проходящие в тот же день недели что и дата для поиска
+        val intersectingWeeklyEvents = mutableListOf<CalendarEvent>()
+        weeklyEvents.forEach {event ->
+            // Поиск по совпадению дня недели у повторяющихся событий
+            if(event.date.dayOfWeek == date.dayOfWeek) {
+                intersectingWeeklyEvents.add(event)
+            }
+    }
+        intersectingWeeklyEvents.addAll(calendarEventDao.getEventsForDate(date))
+
+        return intersectingWeeklyEvents
     }
 
     suspend fun getEventsForMonth(date: LocalDate): List<Int> {
@@ -38,13 +55,6 @@ class CalendarEventRepository @Inject constructor(
         return eventDays.distinct().sorted()
     }
 
-    suspend fun updateOutdatedEvents(currentDate: LocalDate) {
-        calendarEventDao.updateDailyRepeatingEvents(currentDate)
-        calendarEventDao.updateWeeklyRepeatingEvents(currentDate)
-        calendarEventDao.updateMonthlyRepeatingEvents(currentDate)
-        calendarEventDao.updateYearlyRepeatingEvents(currentDate)
-    }
-
     suspend fun saveNewEvent(event: CalendarEvent) {
         return calendarEventDao.insertEvent(event)
     }
@@ -53,7 +63,11 @@ class CalendarEventRepository @Inject constructor(
         calendarEventDao.deleteEvent(event)
     }
 
-    suspend fun updateEvent(event: CalendarEvent) {
-        calendarEventDao.updateEvent(event)
+    suspend fun updateOutDatedEvents(currentDay: LocalDate){
+
+        calendarEventDao.deleteOutdatedEvents(currentDay)
+        calendarEventDao.updateWeeklyRepeatingEvents(currentDay)
+        calendarEventDao.updateMonthlyRepeatingEvents(currentDay)
+        calendarEventDao.updateYearlyRepeatingEvents(currentDay)
     }
 }

@@ -28,14 +28,14 @@ class CalendarEventConverter {
         return LocalTime.ofSecondOfDay(seconds)
     }
 
-    //День
+    // Перевод даты в строковый формат
     @TypeConverter
-    fun fromLocalDate(date: LocalDate): Long {
-        return date.toEpochDay()
+    fun fromLocalDate(date: LocalDate): String {
+        return date.toString()
     }
 
     @TypeConverter
-    fun toLocalDate(epochDays: Long): LocalDate {
-        return LocalDate.ofEpochDay(epochDays)
+    fun toLocalDate(dateString: String): LocalDate {
+        return LocalDate.parse(dateString)
     }
 }

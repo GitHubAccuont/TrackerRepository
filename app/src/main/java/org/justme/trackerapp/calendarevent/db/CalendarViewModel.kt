@@ -7,14 +7,13 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import org.justme.trackerapp.calendarevent.data.CalendarEvent
-import org.justme.trackerapp.calendarevent.data.EventUpdateData
 import org.justme.trackerapp.calendarevent.repo.CalendarEventRepository
 import java.time.LocalDate
 import javax.inject.Inject
 
 @HiltViewModel
 class CalendarViewModel @Inject constructor(
-    private val calendarEventRepository: CalendarEventRepository
+    private val repository: CalendarEventRepository
 ) : ViewModel() {
 
     //Номера дней с событиями для выбранного месяца
@@ -34,7 +33,7 @@ class CalendarViewModel @Inject constructor(
     private fun loadEventDaysForMonth() {
         viewModelScope.launch {
             _selectedDate.value?.let { date ->
-                val days = calendarEventRepository.getEventsForMonth(date)
+                val days = repository.getEventsForMonth(date)
                 _eventDays.value = days
             }
         }
@@ -43,28 +42,25 @@ class CalendarViewModel @Inject constructor(
     private fun loadEventsForDay() {
         viewModelScope.launch {
             _selectedDate.value?.let { date ->
-                val events = calendarEventRepository.getEventsForDate(date)
+                val events = repository.getEventsForDate(date)
                 _eventsForDate.value = events
             }
         }
     }
 
-    fun updateEvent(oldEvent: CalendarEvent, newEventData: EventUpdateData) {
-        viewModelScope.launch {
-            calendarEventRepository.updateEvent(oldEvent)
-        }
-    }
-
     fun addEvent(event: CalendarEvent) {
         viewModelScope.launch {
-            calendarEventRepository.saveNewEvent(event)
+            repository.saveNewEvent(event)
+            loadEventsForDay()
+            loadEventDaysForMonth()
         }
     }
 
     fun removeEvent(event: CalendarEvent) {
         viewModelScope.launch {
-            calendarEventRepository.deleteEvent(event)
+            repository.deleteEvent(event)
             loadEventsForDay()
+            loadEventDaysForMonth()
         }
     }
 
@@ -72,5 +68,11 @@ class CalendarViewModel @Inject constructor(
         _selectedDate.value = date
         loadEventsForDay()
         loadEventDaysForMonth()
+    }
+
+    fun updateEvents(){
+        viewModelScope.launch {
+            repository.updateOutDatedEvents(LocalDate.now())
+        }
     }
 }
