@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
@@ -26,6 +27,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.AccountBox
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
@@ -71,7 +73,7 @@ class CalendarForm(private val viewModel: CalendarViewModel) {
         viewModel.selectDate(selectedDate)
 
         // Структура календарика
-        Column(modifier = Modifier.fillMaxSize()) {
+        Column(modifier = Modifier.fillMaxSize().systemBarsPadding()) {
 
             // Выбор даты и название дней недели
             Column(
@@ -441,7 +443,6 @@ class CalendarForm(private val viewModel: CalendarViewModel) {
         var details by remember { mutableStateOf("") }
         var time by remember { mutableStateOf(LocalTime.now()) }
         var repeatInterval by remember { mutableStateOf(RepeatEnum.NONE) }
-        var repeatEndDate by remember { mutableStateOf<LocalDate?>(null) }
 
         Column(
             modifier = Modifier
@@ -492,8 +493,7 @@ class CalendarForm(private val viewModel: CalendarViewModel) {
                     name = name,
                     details = details,
                     time = time,
-                    repeatInterval = repeatInterval,
-                    repeatEndDate = repeatEndDate
+                    repeatInterval = repeatInterval
                 )
                 onSave(newEvent)
             }) {

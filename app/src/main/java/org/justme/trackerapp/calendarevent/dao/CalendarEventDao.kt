@@ -22,11 +22,11 @@ interface CalendarEventDao {
     @Delete
     suspend fun deleteEvent(event: CalendarEvent)
 
-    @Query("SELECT * FROM calendar_event WHERE date = :date AND repeat_interval = 'NONE'")
+    @Query("SELECT * FROM calendar_event WHERE date = :date AND repeat_interval IN ('NONE', 'MONTHLY', 'YEARLY')")
     suspend fun getEventsForDate(date: LocalDate): List<CalendarEvent>
 
-    @Query("SELECT * FROM calendar_event WHERE (date BETWEEN :monthStart AND :monthEnd) AND repeat_interval = 'WEEKLY'")
-    suspend fun getWeeklyEventsForDate(
+    @Query("SELECT * FROM calendar_event WHERE (date BETWEEN :monthStart AND :monthEnd) AND (repeat_interval = 'WEEKLY' OR repeat_interval = 'DAILY')")
+    suspend fun getEventsForDate(
         monthStart: LocalDate,
         monthEnd: LocalDate
     ): List<CalendarEvent>
@@ -34,54 +34,10 @@ interface CalendarEventDao {
     @Query("SELECT * FROM calendar_event WHERE (date BETWEEN :monthStart AND :monthEnd)")
     suspend fun getEventsForMonth(monthStart: LocalDate, monthEnd: LocalDate): List<CalendarEvent>
 
-    @Query("SELECT * FROM calendar_event WHERE date < :currentDate")
-    suspend fun getOutdatedEvents(currentDate: LocalDate): List<CalendarEvent>
+    @Query("DELETE FROM calendar_event WHERE date < :date AND repeat_interval = 'NONE'")
+    suspend fun deleteOutdatedEvents(date: LocalDate)
 
-    @Query(
-        "DELETE FROM calendar_event " +
-                "WHERE :date < current_date " +
-                "AND repeat_interval = 'NONE'"
-    )
-    fun deleteOutdatedEvents(date: LocalDate)
 
-    @Query(
-        """
-    UPDATE calendar_event
-    SET date = :currentDate
-    WHERE date < :currentDate
-    AND repeat_interval = 'DAILY'
-    """
-    )
-    fun updateDailyRepeatingEvents(currentDate: Long)
-
-    @Query(
-        """
-        UPDATE calendar_event
-        SET date = date(date, '+' || ((julianday(:currentDate) - julianday(date)) / 7) || ' days')
-        WHERE date < :currentDate
-        AND repeat_interval = 'WEEKLY'
-        """
-    )
-    fun updateWeeklyRepeatingEvents(currentDate: LocalDate)
-
-    @Query(
-        """
-        UPDATE calendar_event
-        SET date = date(date, '+' || (strftime('%Y', :currentDate) - strftime('%Y', date)) * 12 +
-            (strftime('%m', :currentDate) - strftime('%m', date)) || ' months')
-        WHERE date < :currentDate
-        AND repeat_interval = 'MONTHLY'
-    """
-    )
-    fun updateMonthlyRepeatingEvents(currentDate: LocalDate)
-
-    @Query(
-        """
-        UPDATE calendar_event
-        SET date = date(date, '+' || (strftime('%Y', :currentDate) - strftime('%Y', date)) || ' years')
-        WHERE date < :currentDate
-        AND repeat_interval = 'YEARLY'
-    """
-    )
-    fun updateYearlyRepeatingEvents(currentDate: LocalDate)
+    @Query("SELECT * FROM calendar_event WHERE repeat_interval IS NOT 'NONE'")
+    suspend fun getRepeatingEvents(): List<CalendarEvent>
 }

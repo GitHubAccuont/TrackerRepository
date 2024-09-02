@@ -27,9 +27,6 @@ class CalendarViewModel @Inject constructor(
     //Внутренняя переменная для сохранения/изменения даты
     private val _selectedDate = MutableStateFlow<LocalDate?>(LocalDate.now())
 
-    //TODO: Убрать если не будет нужно для работы
-    val selectedDate: StateFlow<LocalDate?> = _selectedDate
-
     private fun loadEventDaysForMonth() {
         viewModelScope.launch {
             _selectedDate.value?.let { date ->
@@ -73,6 +70,8 @@ class CalendarViewModel @Inject constructor(
     fun updateEvents(){
         viewModelScope.launch {
             repository.updateOutDatedEvents(LocalDate.now())
+            loadEventsForDay()
+            loadEventDaysForMonth()
         }
     }
 }
